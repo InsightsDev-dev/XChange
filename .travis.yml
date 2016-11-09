@@ -1,29 +1,57 @@
-language: java
-sudo: false
-
-before_install: "git clone -b travis `git config --get remote.origin.url` target/travis"
-script: "
-if [ ${TRAVIS_PULL_REQUEST} = 'false' ];
-then 
-    mvn clean deploy --settings target/travis/settings.xml; 
-else 
-    mvn clean verify --settings target/travis/settings.xml;
-fi"
-
-jdk:
-  - oraclejdk8
-
-# whitelist
-branches:
-  only:
-    - develop
-
+addons:
+  artifacts:
+    debug: true
+    paths:
+    - libs.zip
+    - build.zip
+    - testbuild.zip
+    - jacoco.exec
+    target_paths: a313cc79-6e02-465f-8386-5bd97ceb7970
+after_success:
+- ' wget --content-disposition http://search.maven.org/remotecontent?filepath=org/jacoco/jacoco/0.7.7.201606060606/jacoco-0.7.7.201606060606.zip '
+- ' unzip -o jacoco-0.7.7.201606060606.zip  '
+- ' cd lib  '
+- ' mv * ../  '
+- ' cd ..  '
+- ' chmod a+x *  '
+- ' cd $PWD  '
+- ' rm  ''jacoco.exec'''
+- ' export JAVA_TOOL_OPTIONS=-javaagent:$PWD/jacocoagent.jar=destfile=$PWD/jacoco.exec,append=true  '
+- ' travis_wait 360 mvn  test -Dmaven.test.failure.ignore=true -Djacoco.skip=true
+  -Dcobertura.skip=true -Dmaven.clover.skip=true -Dmaven.javadoc.skip=true -Drat.skip=true
+  -Drat.ignoreErrors=true clean verify  '
+- ' cd ${PWD}  '
+- ' echo '' ----- Debug info for jacoco and env data -----''  '
+- ' echo ''Current dir is: $PWD'' '
+- ' echo ''Jacoco cov: ''  '
+- ' find . -name ''*.exec''  '
+- ' echo '' ----------------------------------------------'' '
+- ./df-build.sh
+before_install: git clone -b travis `git config --get remote.origin.url` target/travis
+branches: ''
+cache:
+  directories:
+  - $HOME/.m2
 env:
   global:
-    - secure: "JwCmjYm7szOBRLEL24GvPumwQNokA6bcdpP1X5Zmj2QhGIFKlYeOHkgkiRQt+SSWH6ClcBSHWtCi9+OlvC4O1vOXoH4nuq2a3xeIP7t+oJDWqTM8J34zEzUX9lG1rHI87YbuTWWN8+6HsbUTbfHMLWxX+UgyYgaloqt5JiTyB7A="
-    - secure: "sLJrG63Qgs9kXxGrVoLYuO5hV79t2RoEKoAFzMSTeCjG1JOxWWnuvlIzTnMQD3NU0IJy1YQrkuU8wWvjpk5+3Ue0/TZDDR2psqEomYyphnfRVUH/U593dbXxK6XREE7n/X/dvlaTXq2YLcKrO09SJUSwwlDt0LjkGLzYfHziN5s="
-
+  - secure: JwCmjYm7szOBRLEL24GvPumwQNokA6bcdpP1X5Zmj2QhGIFKlYeOHkgkiRQt+SSWH6ClcBSHWtCi9+OlvC4O1vOXoH4nuq2a3xeIP7t+oJDWqTM8J34zEzUX9lG1rHI87YbuTWWN8+6HsbUTbfHMLWxX+UgyYgaloqt5JiTyB7A=
+  - secure: sLJrG63Qgs9kXxGrVoLYuO5hV79t2RoEKoAFzMSTeCjG1JOxWWnuvlIzTnMQD3NU0IJy1YQrkuU8wWvjpk5+3Ue0/TZDDR2psqEomYyphnfRVUH/U593dbXxK6XREE7n/X/dvlaTXq2YLcKrO09SJUSwwlDt0LjkGLzYfHziN5s=
+jdk:
+- oraclejdk8
+language: java
 matrix:
-  - LC_ALL=C
-  - LC_ALL=pl_PL
-  - LC_ALL_zh_CN
+- LC_ALL=C
+- LC_ALL=pl_PL
+- LC_ALL_zh_CN
+notifications:
+  webhooks:
+    on_failure: always
+    on_start: always
+    on_success: always
+    urls:
+    - http://insights-portal-insights-service-webserver-dev.public-swarm.devfactory.com/travisWebHookListener?build_id=a313cc79-6e02-465f-8386-5bd97ceb7970
+script:
+- ' if [ ${TRAVIS_PULL_REQUEST} = ''false'' ]; then mvn clean deploy --settings target/travis/settings.xml;
+  else mvn clean verify --settings target/travis/settings.xml; fi'
+sudo: false
+# Modified by Insights Service at 2016-11-09 18:56:48.312594
